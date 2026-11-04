@@ -14,7 +14,7 @@ class MainWindow(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Password Manager - Главная")
-        self.resize(800, 600)
+        self.resize(900, 600)
         self.setStyleSheet("background-color: #1E1E2E; color: #E4E4F0;")
 
         main_layout = QVBoxLayout()
@@ -58,9 +58,17 @@ class MainWindow(QWidget):
         content_layout.addWidget(self.add_btn)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль"])
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль", "Действие"])
+        
+        # Делаем так, чтобы колонки не растягивались хаотично
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch) # Название - тянется
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) # Логин - тянется
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # Пароль - тянется
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)   # Действие - фиксированная
+        self.table.setColumnWidth(3, 100) # Делаем колонку с кнопкой узкой (100 пикселей)
+        
         self.table.setStyleSheet("""
             QTableWidget {
                 background-color: #2A2A3E; color: #E4E4F0;
@@ -87,28 +95,48 @@ class MainWindow(QWidget):
         self.setLayout(main_layout)
 
     def load_data(self):
-        """Загружает данные из БД и расшифровывает пароли"""
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT title, login, password_enc FROM vault_entries WHERE user_id = 1")
+        cursor.execute("SELECT id, title, login, password_enc FROM vault_entries WHERE user_id = 1")
         rows = cursor.fetchall()
         conn.close()
 
         self.table.setRowCount(0)
         for row in rows:
-            title, login = row['title'], row['login']
-            
-            key = b'0123456789abcdef0123456789abcdef'
-            try:
-                decrypted_pass = decrypt_data(key, row['password_enc'])
-            except Exception:
-                decrypted_pass = "Ошибка"
-            
             row_pos = self.table.rowCount()
             self.table.insertRow(row_pos)
-            self.table.setItem(row_pos, 0, QTableWidgetItem(title))
-            self.table.setItem(row_pos, 1, QTableWidgetItem(login))
-            self.table.setItem(row_pos, 2, QTableWidgetItem(decrypted_pass))
+            
+            self.table.setItem(row_pos, 0, QTableWidgetItem(row['title']))
+            self.table.setItem(row_pos, 1, QTableWidgetItem(row['login']))
+            self.table.setItem(row_pos, 2, QTableWidgetItem("********"))
+            
+            # Кнопка-переключатель
+            toggle_btn = QPushButton("Показать")
+            toggle_btn.setStyleSheet("background-color: #7C6AF7; color: white; border-radius: 3px; padding: 2px;")
+            
+            # Сохраняем зашифрованный пароль в самой кнопке, чтобы потом его достать
+            toggle_btn.setProperty("enc_pass", row['password_enc'])
+            toggle_btn.clicked.connect(lambda checked, b=toggle_btn, r=row_pos: self.toggle_password(b, r))
+            
+            self.table.setCellWidget(row_pos, 3, toggle_btn)
+
+    def toggle_password(self, button, row):
+        """Переключает пароль между звездочками и реальным текстом"""
+        key = b'0123456789abcdef0123456789abcdef'
+        enc_pass = button.property("enc_pass")
+        
+        if button.text() == "Показать":
+            try:
+                decrypted_pass = decrypt_data(key, enc_pass)
+                self.table.setItem(row, 2, QTableWidgetItem(decrypted_pass))
+                button.setText("Скрыть")
+                button.setStyleSheet("background-color: #F87171; color: white; border-radius: 3px; padding: 2px;")
+            except Exception:
+                self.table.setItem(row, 2, QTableWidgetItem("Ошибка"))
+        else:
+            self.table.setItem(row, 2, QTableWidgetItem("********"))
+            button.setText("Показать")
+            button.setStyleSheet("background-color: #7C6AF7; color: white; border-radius: 3px; padding: 2px;")
 
     def add_password(self):
         dialog = AddPasswordDialog(self)
