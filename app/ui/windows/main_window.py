@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt6.QtCore import Qt
 from app.ui.windows.add_password_dialog import AddPasswordDialog
 from app.database import get_connection
-from app.security.crypto import encrypt_data
+from app.security.crypto import encrypt_data, decrypt_data
 
 class MainWindow(QWidget):
     def __init__(self, username):
@@ -87,7 +87,7 @@ class MainWindow(QWidget):
         self.setLayout(main_layout)
 
     def load_data(self):
-        """Загружает данные из БД"""
+        """Загружает данные из БД и расшифровывает пароли"""
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT title, login, password_enc FROM vault_entries WHERE user_id = 1")
@@ -97,8 +97,12 @@ class MainWindow(QWidget):
         self.table.setRowCount(0)
         for row in rows:
             title, login = row['title'], row['login']
-            # Показываем звездочки вместо реального пароля
-            decrypted_pass = "*" * 8 
+            
+            key = b'0123456789abcdef0123456789abcdef'
+            try:
+                decrypted_pass = decrypt_data(key, row['password_enc'])
+            except Exception:
+                decrypted_pass = "Ошибка"
             
             row_pos = self.table.rowCount()
             self.table.insertRow(row_pos)
@@ -108,16 +112,14 @@ class MainWindow(QWidget):
 
     def add_password(self):
         dialog = AddPasswordDialog(self)
-        if dialog.exec(): # Если нажали "Сохранить"
+        if dialog.exec():
             title, login, password = dialog.get_data()
             if not title or not login or not password:
                 return
 
-            # Шифруем пароль (используем фиксированный ключ для теста)
             key = b'0123456789abcdef0123456789abcdef'
             encrypted_pass = encrypt_data(key, password)
 
-            # Сохраняем в БД
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute(
@@ -127,5 +129,4 @@ class MainWindow(QWidget):
             conn.commit()
             conn.close()
 
-            # Обновляем таблицу
             self.load_data()
