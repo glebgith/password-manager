@@ -1,9 +1,10 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QLabel
+from PyQt6.QtWidgets import QApplication
+from app.database.models import init_db
 
 app = QApplication(sys.argv)
-window = QLabel("Мой Менеджер Паролей!")
-window.resize(400, 200)
-window.show()
+
+# Создаем базу данных
+init_db()
 
 sys.exit(app.exec())
