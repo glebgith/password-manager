@@ -42,6 +42,18 @@ class MainWindow(QWidget):
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(20, 20, 20, 20)
 
+        # Кнопка Добавить
+        self.add_btn = QPushButton("+ Добавить пароль")
+        self.add_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4ADE80; color: #1E1E2E;
+                padding: 8px; font-size: 14px; border-radius: 5px; font-weight: bold;
+            }
+            QPushButton:hover { background-color: #22C55E; }
+        """)
+        self.add_btn.clicked.connect(self.add_password)
+        content_layout.addWidget(self.add_btn)
+
         self.table = QTableWidget()
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль"])
@@ -56,11 +68,8 @@ class MainWindow(QWidget):
             }
         """)
         
-        # Тестовая строка
-        self.table.setRowCount(1)
-        self.table.setItem(0, 0, QTableWidgetItem("Пример (Google)"))
-        self.table.setItem(0, 1, QTableWidgetItem("my_email@gmail.com"))
-        self.table.setItem(0, 2, QTableWidgetItem("********"))
+        # Убираем тестовую строку
+        self.table.setRowCount(0) 
 
         content_layout.addWidget(self.table)
         main_layout.addWidget(content)
@@ -69,10 +78,17 @@ class MainWindow(QWidget):
         footer = QWidget()
         footer.setStyleSheet("background-color: #2A2A3E; padding: 5px;")
         footer_layout = QHBoxLayout(footer)
-        footer_label = QLabel("© 2026 Твоё ФИО, Твоя Группа")
+        footer_label = QLabel("© 2026 Твоё ФИО, Твоя Группа") # Позже заменишь
         footer_label.setStyleSheet("color: #A0A0B8; font-size: 12px;")
         footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_layout.addWidget(footer_label)
         main_layout.addWidget(footer)
 
         self.setLayout(main_layout)
+
+    def add_password(self):
+        row_position = self.table.rowCount()
+        self.table.insertRow(row_position)
+        self.table.setItem(row_position, 0, QTableWidgetItem("Новый сайт"))
+        self.table.setItem(row_position, 1, QTableWidgetItem("new_login"))
+        self.table.setItem(row_position, 2, QTableWidgetItem("secret123"))
