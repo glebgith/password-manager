@@ -21,7 +21,6 @@ class MainWindow(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # --- ШАПКА (HEADER) ---
         header = QWidget()
         header.setStyleSheet("background-color: #2A2A3E; padding: 10px;")
         header_layout = QHBoxLayout(header)
@@ -32,16 +31,20 @@ class MainWindow(QWidget):
         user_info = QLabel(f"Пользователь: {self.username}")
         user_info.setStyleSheet("color: #A0A0B8;")
         
+        admin_btn = QPushButton("Админка")
+        admin_btn.setStyleSheet("background-color: #7C6AF7; color: white; padding: 5px 10px; border-radius: 3px;")
+        admin_btn.clicked.connect(self.open_admin)
+        
         logout_btn = QPushButton("Выйти")
         logout_btn.setStyleSheet("background-color: #F87171; color: white; padding: 5px 10px; border-radius: 3px;")
         
         header_layout.addWidget(title)
         header_layout.addStretch()
         header_layout.addWidget(user_info)
+        header_layout.addWidget(admin_btn)
         header_layout.addWidget(logout_btn)
         main_layout.addWidget(header)
 
-        # --- КОНТЕНТ (ТАБЛИЦА) ---
         content = QWidget()
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(20, 20, 20, 20)
@@ -61,13 +64,12 @@ class MainWindow(QWidget):
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль", "Действие"])
         
-        # Делаем так, чтобы колонки не растягивались хаотично
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch) # Название - тянется
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch) # Логин - тянется
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch) # Пароль - тянется
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)   # Действие - фиксированная
-        self.table.setColumnWidth(3, 100) # Делаем колонку с кнопкой узкой (100 пикселей)
+        header_view = self.table.horizontalHeader()
+        header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header_view.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header_view.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(3, 100)
         
         self.table.setStyleSheet("""
             QTableWidget {
@@ -82,7 +84,6 @@ class MainWindow(QWidget):
         content_layout.addWidget(self.table)
         main_layout.addWidget(content)
 
-        # --- ПОДВАЛ (FOOTER) ---
         footer = QWidget()
         footer.setStyleSheet("background-color: #2A2A3E; padding: 5px;")
         footer_layout = QHBoxLayout(footer)
@@ -110,18 +111,14 @@ class MainWindow(QWidget):
             self.table.setItem(row_pos, 1, QTableWidgetItem(row['login']))
             self.table.setItem(row_pos, 2, QTableWidgetItem("********"))
             
-            # Кнопка-переключатель
             toggle_btn = QPushButton("Показать")
             toggle_btn.setStyleSheet("background-color: #7C6AF7; color: white; border-radius: 3px; padding: 2px;")
-            
-            # Сохраняем зашифрованный пароль в самой кнопке, чтобы потом его достать
             toggle_btn.setProperty("enc_pass", row['password_enc'])
             toggle_btn.clicked.connect(lambda checked, b=toggle_btn, r=row_pos: self.toggle_password(b, r))
             
             self.table.setCellWidget(row_pos, 3, toggle_btn)
 
     def toggle_password(self, button, row):
-        """Переключает пароль между звездочками и реальным текстом"""
         key = b'0123456789abcdef0123456789abcdef'
         enc_pass = button.property("enc_pass")
         
@@ -158,3 +155,8 @@ class MainWindow(QWidget):
             conn.close()
 
             self.load_data()
+
+    def open_admin(self):
+        from app.ui.windows.admin_window import AdminWindow
+        self.admin_win = AdminWindow()
+        self.admin_win.show()
