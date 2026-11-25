@@ -1,6 +1,7 @@
 import sys
 import traceback
 from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QFont
 from app.database.models import init_db
 from app.database import get_connection
 from app.ui.windows.login_window import LoginWindow
@@ -28,6 +29,11 @@ def start_main_app(username):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    
+    # Устанавливаем современный шрифт для всего приложения
+    font = QFont("Segoe UI", 10)
+    app.setFont(font)
+    
     init_db()
 
     login_window = LoginWindow(on_login_success=start_main_app)
