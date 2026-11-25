@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, 
-                             QGraphicsDropShadowEffect, QLineEdit)
+                             QGraphicsDropShadowEffect, QLineEdit, QMessageBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from app.ui.windows.add_password_dialog import AddPasswordDialog
@@ -8,6 +8,7 @@ from app.database import get_connection
 from app.security.crypto import encrypt_data, decrypt_data
 from app.ui.animations import AnimatedBackground
 from app.ui.widgets import AnimatedButton
+from app.reports import export_to_excel, export_to_pdf, backup_db
 
 class MainWindow(QWidget):
     def __init__(self, username):
@@ -35,7 +36,6 @@ class MainWindow(QWidget):
         title = QLabel("Мой Менеджер Паролей")
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: #E4E4F0;")
         
-        # Строка поиска
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Поиск...")
         self.search_input.setStyleSheet("""
@@ -76,9 +76,29 @@ class MainWindow(QWidget):
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(20, 20, 20, 20)
 
+        # Панель с кнопками
+        btn_layout = QHBoxLayout()
+        
         self.add_btn = AnimatedButton("+ Добавить пароль", "#4ADE80", "#86EFAC", text_color="#1E1E2E")
         self.add_btn.clicked.connect(self.add_password)
-        content_layout.addWidget(self.add_btn)
+        btn_layout.addWidget(self.add_btn)
+
+        self.excel_btn = QPushButton("Выгрузить в Excel")
+        self.excel_btn.setStyleSheet("background-color: #3A3A4E; color: white; padding: 8px; border-radius: 5px; font-weight: bold;")
+        self.excel_btn.clicked.connect(self.export_excel)
+        btn_layout.addWidget(self.excel_btn)
+
+        self.pdf_btn = QPushButton("Выгрузить в PDF")
+        self.pdf_btn.setStyleSheet("background-color: #3A3A4E; color: white; padding: 8px; border-radius: 5px; font-weight: bold;")
+        self.pdf_btn.clicked.connect(self.export_pdf)
+        btn_layout.addWidget(self.pdf_btn)
+
+        self.backup_btn = QPushButton("Создать бэкап БД")
+        self.backup_btn.setStyleSheet("background-color: #3A3A4E; color: white; padding: 8px; border-radius: 5px; font-weight: bold;")
+        self.backup_btn.clicked.connect(self.make_backup)
+        btn_layout.addWidget(self.backup_btn)
+
+        content_layout.addLayout(btn_layout)
 
         self.table = QTableWidget()
         self.table.setColumnCount(4)
@@ -134,10 +154,9 @@ class MainWindow(QWidget):
             title = row['title']
             login = row['login']
             
-            # Фильтрация
             if filter_text:
                 if (filter_text.lower() not in title.lower()) and (filter_text.lower() not in login.lower()):
-                    continue # Пропускаем строку, если нет совпадений
+                    continue
             
             row_pos = self.table.rowCount()
             self.table.insertRow(row_pos)
@@ -193,6 +212,27 @@ class MainWindow(QWidget):
             conn.close()
 
             self.load_data()
+
+    def export_excel(self):
+        try:
+            path = export_to_excel()
+            QMessageBox.information(self, "Успех", f"Excel-отчёт сохранен:\n{path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось создать Excel:\n{str(e)}")
+
+    def export_pdf(self):
+        try:
+            path = export_to_pdf()
+            QMessageBox.information(self, "Успех", f"PDF-отчёт сохранен:\n{path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось создать PDF:\n{str(e)}")
+
+    def make_backup(self):
+        try:
+            path = backup_db()
+            QMessageBox.information(self, "Успех", f"Бэкап создан:\n{path}")
+        except Exception as e:
+            QMessageBox.critical(self, "Ошибка", f"Не удалось сделать бэкап:\n{str(e)}")
 
     def open_admin(self):
         from app.ui.windows.admin_window import AdminWindow
