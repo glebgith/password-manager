@@ -51,15 +51,31 @@ class MainWindow(QWidget):
         user_info = QLabel(f"Пользователь: {self.username}")
         user_info.setStyleSheet("color: #A0A0B8;")
         
-        admin_btn = AnimatedButton("Админка", "#7C6AF7", "#D8B4FE")
+        # Стиль для верхних кнопок (строгий, одинаковый размер)
+        top_btn_style = """
+            QPushButton {
+                background-color: #3A3A4E; color: white; padding: 6px 15px; 
+                border-radius: 5px; font-weight: bold; font-size: 13px;
+            }
+            QPushButton:hover { background-color: #4A4A5E; }
+        """
+
+        admin_btn = QPushButton("Админка")
+        admin_btn.setStyleSheet(top_btn_style)
         admin_btn.clicked.connect(self.open_admin)
         
         about_btn = QPushButton("О программе")
-        about_btn.setStyleSheet("background-color: #3A3A4E; color: white; padding: 5px 10px; border-radius: 3px;")
+        about_btn.setStyleSheet(top_btn_style)
         about_btn.clicked.connect(self.open_about)
         
         logout_btn = QPushButton("Выйти")
-        logout_btn.setStyleSheet("background-color: #F87171; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;")
+        logout_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #F87171; color: white; padding: 6px 15px; 
+                border-radius: 5px; font-weight: bold; font-size: 13px;
+            }
+            QPushButton:hover { background-color: #EF4444; }
+        """)
         
         header_layout.addWidget(title)
         header_layout.addWidget(self.search_input)
@@ -78,7 +94,14 @@ class MainWindow(QWidget):
 
         btn_layout = QHBoxLayout()
         
-        self.add_btn = AnimatedButton("+ Добавить пароль", "#4ADE80", "#86EFAC", text_color="#1E1E2E")
+        self.add_btn = QPushButton("+ Добавить пароль")
+        self.add_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4ADE80; color: #1E1E2E;
+                padding: 8px; font-size: 14px; border-radius: 5px; font-weight: bold;
+            }
+            QPushButton:hover { background-color: #22C55E; }
+        """)
         self.add_btn.clicked.connect(self.add_password)
         btn_layout.addWidget(self.add_btn)
 
@@ -100,7 +123,7 @@ class MainWindow(QWidget):
         content_layout.addLayout(btn_layout)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(5) # Теперь 5 колонок (добавили Удалить)
+        self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль", "Показать", "Удалить"])
         
         header_view = self.table.horizontalHeader()
@@ -172,7 +195,6 @@ class MainWindow(QWidget):
             toggle_btn.clicked.connect(lambda checked, b=toggle_btn, r=row_pos: self.toggle_password(b, r))
             self.table.setCellWidget(row_pos, 3, toggle_btn)
 
-            # Кнопка удаления
             del_btn = QPushButton("Удалить")
             del_btn.setStyleSheet("background-color: #F87171; color: white; border-radius: 3px; padding: 2px;")
             del_btn.setProperty("entry_id", row['id'])
@@ -201,16 +223,11 @@ class MainWindow(QWidget):
 
     def delete_entry(self, button):
         entry_id = button.property("entry_id")
-        
-        # ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ (Требование 13)
         reply = QMessageBox.question(
-            self, 
-            'Подтверждение', 
-            'Вы уверены, что хотите удалить эту запись?',
+            self, 'Подтверждение', 'Вы уверены, что хотите удалить эту запись?',
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
             QMessageBox.StandardButton.No
         )
-        
         if reply == QMessageBox.StandardButton.Yes:
             conn = get_connection()
             cursor = conn.cursor()
@@ -223,12 +240,9 @@ class MainWindow(QWidget):
         dialog = AddPasswordDialog(self)
         if dialog.exec():
             title, login, password = dialog.get_data()
-            
-            # ВАЛИДАЦИЯ ВВОДА (Требование 13)
             if not title.strip() or not login.strip() or not password.strip():
                 QMessageBox.warning(self, "Ошибка", "Все поля должны быть заполнены!")
                 return
-                
             if len(password) < 4:
                 QMessageBox.warning(self, "Ошибка", "Пароль должен быть не менее 4 символов!")
                 return
@@ -244,7 +258,6 @@ class MainWindow(QWidget):
             )
             conn.commit()
             conn.close()
-
             self.load_data()
 
     def export_excel(self):
