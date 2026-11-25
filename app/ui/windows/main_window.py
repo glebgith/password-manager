@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, 
-                             QGraphicsDropShadowEffect, QLineEdit, QMessageBox)
+                             QGraphicsDropShadowEffect, QLineEdit, QMessageBox, QApplication)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from app.ui.windows.add_password_dialog import AddPasswordDialog
@@ -19,16 +19,15 @@ class MainWindow(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Password Manager - Главная")
-        self.resize(900, 600)
+        self.resize(1000, 600)
 
         self.bg = AnimatedBackground(self)
-        self.bg.setGeometry(0, 0, 900, 600)
+        self.bg.setGeometry(0, 0, 1000, 600)
 
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        # --- ШАПКА ---
         header = QWidget()
         header.setStyleSheet("background-color: rgba(42, 42, 62, 0.95); padding: 10px;")
         header_layout = QHBoxLayout(header)
@@ -51,7 +50,6 @@ class MainWindow(QWidget):
         user_info = QLabel(f"Пользователь: {self.username}")
         user_info.setStyleSheet("color: #A0A0B8;")
         
-        # Стиль для верхних кнопок (строгий, одинаковый размер)
         top_btn_style = """
             QPushButton {
                 background-color: #3A3A4E; color: white; padding: 6px 15px; 
@@ -86,7 +84,6 @@ class MainWindow(QWidget):
         header_layout.addWidget(logout_btn)
         main_layout.addWidget(header)
 
-        # --- КОНТЕНТ ---
         content = QWidget()
         content.setStyleSheet("background: transparent;")
         content_layout = QVBoxLayout(content)
@@ -123,8 +120,8 @@ class MainWindow(QWidget):
         content_layout.addLayout(btn_layout)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль", "Показать", "Удалить"])
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль", "Показать", "Копировать", "Удалить"])
         
         header_view = self.table.horizontalHeader()
         header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -132,8 +129,10 @@ class MainWindow(QWidget):
         header_view.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         header_view.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
         header_view.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(3, 90)
+        header_view.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(3, 80)
         self.table.setColumnWidth(4, 90)
+        self.table.setColumnWidth(5, 80)
         
         self.table.setStyleSheet("""
             QTableWidget {
@@ -154,7 +153,6 @@ class MainWindow(QWidget):
         content_layout.addWidget(self.table)
         main_layout.addWidget(content)
 
-        # --- ПОДВАЛ ---
         footer = QWidget()
         footer.setStyleSheet("background-color: rgba(42, 42, 62, 0.95); padding: 5px;")
         footer_layout = QHBoxLayout(footer)
@@ -195,11 +193,17 @@ class MainWindow(QWidget):
             toggle_btn.clicked.connect(lambda checked, b=toggle_btn, r=row_pos: self.toggle_password(b, r))
             self.table.setCellWidget(row_pos, 3, toggle_btn)
 
+            copy_btn = QPushButton("Копировать")
+            copy_btn.setStyleSheet("background-color: #3A3A4E; color: white; border-radius: 3px; padding: 2px;")
+            copy_btn.setProperty("enc_pass", row['password_enc'])
+            copy_btn.clicked.connect(lambda checked, b=copy_btn: self.copy_password(b))
+            self.table.setCellWidget(row_pos, 4, copy_btn)
+
             del_btn = QPushButton("Удалить")
             del_btn.setStyleSheet("background-color: #F87171; color: white; border-radius: 3px; padding: 2px;")
             del_btn.setProperty("entry_id", row['id'])
             del_btn.clicked.connect(lambda checked, b=del_btn: self.delete_entry(b))
-            self.table.setCellWidget(row_pos, 4, del_btn)
+            self.table.setCellWidget(row_pos, 5, del_btn)
 
     def filter_table(self, text):
         self.load_data(filter_text=text)
@@ -220,6 +224,17 @@ class MainWindow(QWidget):
             self.table.setItem(row, 2, QTableWidgetItem("********"))
             button.setText("Показать")
             button.setStyleSheet("background-color: #7C6AF7; color: white; border-radius: 3px; padding: 2px;")
+
+    def copy_password(self, button):
+        key = b'0123456789abcdef0123456789abcdef'
+        enc_pass = button.property("enc_pass")
+        try:
+            decrypted_pass = decrypt_data(key, enc_pass)
+            clipboard = QApplication.clipboard()
+            clipboard.setText(decrypted_pass)
+            QMessageBox.information(self, "Успех", "Пароль скопирован в буфер обмена!")
+        except Exception:
+            QMessageBox.critical(self, "Ошибка", "Не удалось расшифровать пароль")
 
     def delete_entry(self, button):
         entry_id = button.property("entry_id")
