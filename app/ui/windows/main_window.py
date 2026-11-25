@@ -40,6 +40,10 @@ class MainWindow(QWidget):
         admin_btn = AnimatedButton("Админка", "#7C6AF7", "#D8B4FE")
         admin_btn.clicked.connect(self.open_admin)
         
+        about_btn = QPushButton("О программе")
+        about_btn.setStyleSheet("background-color: #3A3A4E; color: white; padding: 5px 10px; border-radius: 3px;")
+        about_btn.clicked.connect(self.open_about)
+        
         logout_btn = QPushButton("Выйти")
         logout_btn.setStyleSheet("background-color: #F87171; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;")
         
@@ -47,6 +51,7 @@ class MainWindow(QWidget):
         header_layout.addStretch()
         header_layout.addWidget(user_info)
         header_layout.addWidget(admin_btn)
+        header_layout.addWidget(about_btn)
         header_layout.addWidget(logout_btn)
         main_layout.addWidget(header)
 
@@ -165,6 +170,11 @@ class MainWindow(QWidget):
         from app.ui.windows.admin_window import AdminWindow
         self.admin_win = AdminWindow()
         self.admin_win.show()
+
+    def open_about(self):
+        from app.ui.windows.about_window import AboutWindow
+        self.about_win = AboutWindow()
+        self.about_win.show()
 
     def resizeEvent(self, event):
         self.bg.setGeometry(0, 0, self.width(), self.height())
