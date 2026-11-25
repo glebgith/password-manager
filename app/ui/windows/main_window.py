@@ -1,9 +1,13 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
-                             QPushButton, QTableWidget, QTableWidgetItem, QHeaderView)
+                             QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, 
+                             QGraphicsDropShadowEffect)
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QColor
 from app.ui.windows.add_password_dialog import AddPasswordDialog
 from app.database import get_connection
 from app.security.crypto import encrypt_data, decrypt_data
+from app.ui.animations import AnimatedBackground
+from app.ui.widgets import AnimatedButton
 
 class MainWindow(QWidget):
     def __init__(self, username):
@@ -15,14 +19,16 @@ class MainWindow(QWidget):
     def init_ui(self):
         self.setWindowTitle("Password Manager - Главная")
         self.resize(900, 600)
-        self.setStyleSheet("background-color: #1E1E2E; color: #E4E4F0;")
 
-        main_layout = QVBoxLayout()
+        self.bg = AnimatedBackground(self)
+        self.bg.setGeometry(0, 0, 900, 600)
+
+        main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
         header = QWidget()
-        header.setStyleSheet("background-color: #2A2A3E; padding: 10px;")
+        header.setStyleSheet("background-color: rgba(42, 42, 62, 0.95); padding: 10px;")
         header_layout = QHBoxLayout(header)
         
         title = QLabel("Мой Менеджер Паролей")
@@ -31,12 +37,11 @@ class MainWindow(QWidget):
         user_info = QLabel(f"Пользователь: {self.username}")
         user_info.setStyleSheet("color: #A0A0B8;")
         
-        admin_btn = QPushButton("Админка")
-        admin_btn.setStyleSheet("background-color: #7C6AF7; color: white; padding: 5px 10px; border-radius: 3px;")
+        admin_btn = AnimatedButton("Админка", "#7C6AF7", "#D8B4FE")
         admin_btn.clicked.connect(self.open_admin)
         
         logout_btn = QPushButton("Выйти")
-        logout_btn.setStyleSheet("background-color: #F87171; color: white; padding: 5px 10px; border-radius: 3px;")
+        logout_btn.setStyleSheet("background-color: #F87171; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;")
         
         header_layout.addWidget(title)
         header_layout.addStretch()
@@ -46,17 +51,11 @@ class MainWindow(QWidget):
         main_layout.addWidget(header)
 
         content = QWidget()
+        content.setStyleSheet("background: transparent;")
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(20, 20, 20, 20)
 
-        self.add_btn = QPushButton("+ Добавить пароль")
-        self.add_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4ADE80; color: #1E1E2E;
-                padding: 8px; font-size: 14px; border-radius: 5px; font-weight: bold;
-            }
-            QPushButton:hover { background-color: #22C55E; }
-        """)
+        self.add_btn = AnimatedButton("+ Добавить пароль", "#4ADE80", "#86EFAC", text_color="#1E1E2E")
         self.add_btn.clicked.connect(self.add_password)
         content_layout.addWidget(self.add_btn)
 
@@ -73,19 +72,25 @@ class MainWindow(QWidget):
         
         self.table.setStyleSheet("""
             QTableWidget {
-                background-color: #2A2A3E; color: #E4E4F0;
-                border: 1px solid #3A3A4E; border-radius: 5px;
+                background-color: rgba(42, 42, 62, 0.95); color: #E4E4F0;
+                border: 1px solid #7C6AF7; border-radius: 5px;
             }
             QHeaderView::section {
                 background-color: #1E1E2E; color: #7C6AF7; font-weight: bold; padding: 5px;
             }
         """)
         
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(20)
+        shadow.setColor(QColor(124, 106, 247, 150))
+        shadow.setOffset(0, 0)
+        self.table.setGraphicsEffect(shadow)
+        
         content_layout.addWidget(self.table)
         main_layout.addWidget(content)
 
         footer = QWidget()
-        footer.setStyleSheet("background-color: #2A2A3E; padding: 5px;")
+        footer.setStyleSheet("background-color: rgba(42, 42, 62, 0.95); padding: 5px;")
         footer_layout = QHBoxLayout(footer)
         footer_label = QLabel("© 2026 Твоё ФИО, Твоя Группа")
         footer_label.setStyleSheet("color: #A0A0B8; font-size: 12px;")
@@ -160,3 +165,7 @@ class MainWindow(QWidget):
         from app.ui.windows.admin_window import AdminWindow
         self.admin_win = AdminWindow()
         self.admin_win.show()
+
+    def resizeEvent(self, event):
+        self.bg.setGeometry(0, 0, self.width(), self.height())
+        super().resizeEvent(event)
