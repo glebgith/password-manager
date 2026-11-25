@@ -76,7 +76,6 @@ class MainWindow(QWidget):
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(20, 20, 20, 20)
 
-        # Панель с кнопками
         btn_layout = QHBoxLayout()
         
         self.add_btn = AnimatedButton("+ Добавить пароль", "#4ADE80", "#86EFAC", text_color="#1E1E2E")
@@ -101,15 +100,17 @@ class MainWindow(QWidget):
         content_layout.addLayout(btn_layout)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль", "Действие"])
+        self.table.setColumnCount(5) # Теперь 5 колонок (добавили Удалить)
+        self.table.setHorizontalHeaderLabels(["Название", "Логин", "Пароль", "Показать", "Удалить"])
         
         header_view = self.table.horizontalHeader()
         header_view.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header_view.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header_view.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         header_view.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-        self.table.setColumnWidth(3, 100)
+        header_view.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+        self.table.setColumnWidth(3, 90)
+        self.table.setColumnWidth(4, 90)
         
         self.table.setStyleSheet("""
             QTableWidget {
@@ -169,8 +170,14 @@ class MainWindow(QWidget):
             toggle_btn.setStyleSheet("background-color: #7C6AF7; color: white; border-radius: 3px; padding: 2px;")
             toggle_btn.setProperty("enc_pass", row['password_enc'])
             toggle_btn.clicked.connect(lambda checked, b=toggle_btn, r=row_pos: self.toggle_password(b, r))
-            
             self.table.setCellWidget(row_pos, 3, toggle_btn)
+
+            # Кнопка удаления
+            del_btn = QPushButton("Удалить")
+            del_btn.setStyleSheet("background-color: #F87171; color: white; border-radius: 3px; padding: 2px;")
+            del_btn.setProperty("entry_id", row['id'])
+            del_btn.clicked.connect(lambda checked, b=del_btn: self.delete_entry(b))
+            self.table.setCellWidget(row_pos, 4, del_btn)
 
     def filter_table(self, text):
         self.load_data(filter_text=text)
@@ -192,11 +199,38 @@ class MainWindow(QWidget):
             button.setText("Показать")
             button.setStyleSheet("background-color: #7C6AF7; color: white; border-radius: 3px; padding: 2px;")
 
+    def delete_entry(self, button):
+        entry_id = button.property("entry_id")
+        
+        # ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ (Требование 13)
+        reply = QMessageBox.question(
+            self, 
+            'Подтверждение', 
+            'Вы уверены, что хотите удалить эту запись?',
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+            QMessageBox.StandardButton.No
+        )
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM vault_entries WHERE id = ?", (entry_id,))
+            conn.commit()
+            conn.close()
+            self.load_data()
+
     def add_password(self):
         dialog = AddPasswordDialog(self)
         if dialog.exec():
             title, login, password = dialog.get_data()
-            if not title or not login or not password:
+            
+            # ВАЛИДАЦИЯ ВВОДА (Требование 13)
+            if not title.strip() or not login.strip() or not password.strip():
+                QMessageBox.warning(self, "Ошибка", "Все поля должны быть заполнены!")
+                return
+                
+            if len(password) < 4:
+                QMessageBox.warning(self, "Ошибка", "Пароль должен быть не менее 4 символов!")
                 return
 
             key = b'0123456789abcdef0123456789abcdef'
