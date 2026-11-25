@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, 
-                             QGraphicsDropShadowEffect)
+                             QGraphicsDropShadowEffect, QLineEdit)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QColor
 from app.ui.windows.add_password_dialog import AddPasswordDialog
@@ -27,12 +27,26 @@ class MainWindow(QWidget):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
+        # --- ШАПКА ---
         header = QWidget()
         header.setStyleSheet("background-color: rgba(42, 42, 62, 0.95); padding: 10px;")
         header_layout = QHBoxLayout(header)
         
         title = QLabel("Мой Менеджер Паролей")
         title.setStyleSheet("font-size: 18px; font-weight: bold; color: #E4E4F0;")
+        
+        # Строка поиска
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Поиск...")
+        self.search_input.setStyleSheet("""
+            QLineEdit {
+                padding: 5px; font-size: 14px; border-radius: 5px;
+                background-color: #1E1E2E; color: #E4E4F0; border: 1px solid #3A3A4E;
+                width: 200px;
+            }
+            QLineEdit:focus { border: 1px solid #7C6AF7; }
+        """)
+        self.search_input.textChanged.connect(self.filter_table)
         
         user_info = QLabel(f"Пользователь: {self.username}")
         user_info.setStyleSheet("color: #A0A0B8;")
@@ -48,6 +62,7 @@ class MainWindow(QWidget):
         logout_btn.setStyleSheet("background-color: #F87171; color: white; padding: 5px 10px; border-radius: 3px; font-weight: bold;")
         
         header_layout.addWidget(title)
+        header_layout.addWidget(self.search_input)
         header_layout.addStretch()
         header_layout.addWidget(user_info)
         header_layout.addWidget(admin_btn)
@@ -55,6 +70,7 @@ class MainWindow(QWidget):
         header_layout.addWidget(logout_btn)
         main_layout.addWidget(header)
 
+        # --- КОНТЕНТ ---
         content = QWidget()
         content.setStyleSheet("background: transparent;")
         content_layout = QVBoxLayout(content)
@@ -94,6 +110,7 @@ class MainWindow(QWidget):
         content_layout.addWidget(self.table)
         main_layout.addWidget(content)
 
+        # --- ПОДВАЛ ---
         footer = QWidget()
         footer.setStyleSheet("background-color: rgba(42, 42, 62, 0.95); padding: 5px;")
         footer_layout = QHBoxLayout(footer)
@@ -105,7 +122,7 @@ class MainWindow(QWidget):
 
         self.setLayout(main_layout)
 
-    def load_data(self):
+    def load_data(self, filter_text=""):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT id, title, login, password_enc FROM vault_entries WHERE user_id = 1")
@@ -114,11 +131,19 @@ class MainWindow(QWidget):
 
         self.table.setRowCount(0)
         for row in rows:
+            title = row['title']
+            login = row['login']
+            
+            # Фильтрация
+            if filter_text:
+                if (filter_text.lower() not in title.lower()) and (filter_text.lower() not in login.lower()):
+                    continue # Пропускаем строку, если нет совпадений
+            
             row_pos = self.table.rowCount()
             self.table.insertRow(row_pos)
             
-            self.table.setItem(row_pos, 0, QTableWidgetItem(row['title']))
-            self.table.setItem(row_pos, 1, QTableWidgetItem(row['login']))
+            self.table.setItem(row_pos, 0, QTableWidgetItem(title))
+            self.table.setItem(row_pos, 1, QTableWidgetItem(login))
             self.table.setItem(row_pos, 2, QTableWidgetItem("********"))
             
             toggle_btn = QPushButton("Показать")
@@ -127,6 +152,9 @@ class MainWindow(QWidget):
             toggle_btn.clicked.connect(lambda checked, b=toggle_btn, r=row_pos: self.toggle_password(b, r))
             
             self.table.setCellWidget(row_pos, 3, toggle_btn)
+
+    def filter_table(self, text):
+        self.load_data(filter_text=text)
 
     def toggle_password(self, button, row):
         key = b'0123456789abcdef0123456789abcdef'
