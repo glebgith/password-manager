@@ -2,7 +2,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, 
                              QGraphicsDropShadowEffect, QLineEdit, QMessageBox, QApplication)
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QColor, QIcon
 from app.ui.windows.add_password_dialog import AddPasswordDialog
 from app.database import get_connection
 from app.security.crypto import encrypt_data, decrypt_data
@@ -19,6 +19,7 @@ class MainWindow(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Password Manager - Главная")
+        self.setWindowIcon(QIcon("icon.png"))
         self.resize(1000, 600)
 
         self.bg = AnimatedBackground(self)
@@ -156,7 +157,7 @@ class MainWindow(QWidget):
         footer = QWidget()
         footer.setStyleSheet("background-color: rgba(42, 42, 62, 0.95); padding: 5px;")
         footer_layout = QHBoxLayout(footer)
-        footer_label = QLabel("© 2026 Твоё ФИО, Твоя Группа")
+        footer_label = QLabel("© 2026 ТВОЁ_ФИО, ТВОЯ_ГРУППА")
         footer_label.setStyleSheet("color: #A0A0B8; font-size: 12px;")
         footer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         footer_layout.addWidget(footer_label)

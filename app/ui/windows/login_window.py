@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QMessageBox
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QColor
+from PyQt6.QtGui import QColor, QIcon
 from app.ui.animations import AnimatedBackground
 
 class LoginWindow(QWidget):
@@ -11,19 +11,17 @@ class LoginWindow(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Password Manager - Вход")
+        self.setWindowIcon(QIcon("icon.png"))
         self.resize(400, 500)
         
-        # Анимированный фон
         self.bg = AnimatedBackground(self)
         self.bg.setGeometry(0, 0, 400, 500)
 
-        # Главный контейнер
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.setSpacing(15)
         layout.setContentsMargins(40, 40, 40, 40)
 
-        # Заголовок
         title = QLabel("Вход в систему")
         title.setStyleSheet("""
             font-size: 26px; font-weight: bold; color: #E4E4F0; 
@@ -32,7 +30,6 @@ class LoginWindow(QWidget):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        # Поле Логин
         self.username_input = QLineEdit()
         self.username_input.setPlaceholderText("Введите логин")
         self.username_input.setStyleSheet("""
@@ -45,7 +42,6 @@ class LoginWindow(QWidget):
         """)
         layout.addWidget(self.username_input)
 
-        # Поле Пароль
         self.password_input = QLineEdit()
         self.password_input.setPlaceholderText("Введите пароль")
         self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
@@ -59,7 +55,6 @@ class LoginWindow(QWidget):
         """)
         layout.addWidget(self.password_input)
 
-        # Кнопка Войти
         self.login_btn = QPushButton("Войти")
         self.login_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.login_btn.setStyleSheet("""
@@ -74,7 +69,6 @@ class LoginWindow(QWidget):
         self.login_btn.clicked.connect(self.handle_login)
         layout.addWidget(self.login_btn)
 
-        # Вход по нажатию Enter (возврат каретки в любом из полей)
         self.username_input.returnPressed.connect(self.handle_login)
         self.password_input.returnPressed.connect(self.handle_login)
 
@@ -86,7 +80,6 @@ class LoginWindow(QWidget):
             QMessageBox.warning(self, "Ошибка", "Заполните все поля!")
             return
 
-        # Временная заглушка (позже свяжем с базой данных)
         if username == "admin" and password == "admin":
             self.on_login_success(username)
         else:

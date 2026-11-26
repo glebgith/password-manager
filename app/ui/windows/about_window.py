@@ -1,10 +1,12 @@
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QIcon
 
 class AboutWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("О программе")
+        self.setWindowIcon(QIcon("icon.png"))
         self.resize(400, 300)
         self.setStyleSheet("background-color: #1E1E2E; color: #E4E4F0;")
         self.init_ui()
